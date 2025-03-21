@@ -3,7 +3,7 @@ echo "Bienvenido al script de creacion de usuarios"
 echo "Introduzca a continuacion los parametros solicitados"
 echo "ID de usuario"
 read -r id
-if sudo cat /etc/passwd | tail | cut -d ":" -f 1 | grep "$id"; then
+if cat  /etc/passwd | tail | cut -d ":" -f 1 | grep "$id"; then
 	echo "EL usuario ya existe"
 	exit 1;
 fi
@@ -19,17 +19,17 @@ fi
 
 if [[ "$opcion" == "a" ]]; then
 	echo "Escriba el grupo para agregar"
-	sudo cat /etc/group | tail | grep "1000*" | cut -d ":" -f 1
+	cat /etc/group | tail | grep "1000*" | cut -d ":" -f 1
 	read -r grup	
 elif [[ "$opcion" == "c" ]]; then
 	echo "Escriba el nombre del grupo"
 	read -r grup
-	if sudo cat /etc/group | tail | cut -d ":" -f 1 | grep "$grup"; then
+	if cat /etc/group | tail | cut -d ":" -f 1 | grep "$grup"; then
 		echo "EL grupo ya existe"
 		exit 1;
 	fi
 	echo "Creando grupo.."
-	sudo groupadd "$grup"
+	groupadd "$grup"
 fi
 
 echo "Home donde trabajara el usuario"
@@ -45,7 +45,7 @@ test "$grup" || { echo "Error: no se pudo crear usuario falta el parametro Grupo
 
 
 echo "Creando usuario..."
-sudo useradd -c "$com" -m -d "$home" -g "$grup" -s "$shell" "$id"
+useradd -c "$com" -m -d "$home" -g "$grup" -s "$shell" "$id"
 echo "Usuario creado con exito"
 
 while true; do
@@ -56,7 +56,7 @@ while true; do
 
 	if [[ ${#pass} -ge 12 && "$pass" =~ [A-Z] && "$pass" =~ [a-z] && "$pass" =~ [0-9] ]]; then
 		echo "$id" "$pass" >> .secreto_noabrir.txt
-		echo "$id:$pass" | sudo chpasswd
+		echo "$id:$pass" | chpasswd
 		echo "Contraseña establecida"
 		break
 	else
@@ -65,22 +65,20 @@ while true; do
 done
 
 echo "¿Desea establecer una cuota en el disco  para el usuario?"
-echo "y o n"
+echo "y/n"
 read -r respuesta
 if [[ "$respuesta" == "y" ]]; then
-	echo "Tamaño en MB de la cuota soft:"
+	echo "Tamaño del limite soft:"
 	read -r soft
-	echo "Tamaño en MB de la cuota hard:"
+	echo "Tamaño del limite  hard:"
 	read -r hard
 
 	if [[ ! "$soft" =~ ^[0-9]+$ || ! "$hard" =~ ^[0-9]+$ ]]; then
 		echo "Formato no valido"
 		exit 1
 	fi
-	bloque_s=$((soft * 2048))
-	bloque_h=$((hard * 2048))
 	
 	echo "Estableciendo cuota..."
-	sudo setquota -u "$id" "$bloque_s" "$bloque_h" 0 0 /home
+	setquota -u "$id" "$soft" "$hard" 0 0 /
 	echo "Cuota establecida. Avise al usuario sobre su limite hard y soft"
 fi
